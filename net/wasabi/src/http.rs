@@ -1,8 +1,11 @@
 extern crate alloc;
+use alloc::format;
 use alloc::string::String;
+use alloc::string::ToString;
 use alloc::vec::Vec;
 use noli::net::SocketAddr;
 use noli::net::TcpStream;
+use noli::net::lookup_host;
 use saba_core::error::Error;
 use saba_core::http::HttpResponse;
 
@@ -20,7 +23,7 @@ impl HttpClient {
                 return Err(Error::Network(format!(
                     "Failed to find IP addresses: {:#?}",
                     e
-                )))
+                )));
             }
         };
 
@@ -35,7 +38,7 @@ impl HttpClient {
             Err(_) => {
                 return Err(Error::Network(
                     "Failed to connect to TCP stream".to_string(),
-                ))
+                ));
             }
         };
 
@@ -56,7 +59,7 @@ impl HttpClient {
             Err(_) => {
                 return Err(Error::Network(
                     "Failed to send a request to TCP stream".to_string(),
-                ))
+                ));
             }
         };
 
@@ -69,7 +72,7 @@ impl HttpClient {
                 Err(_) => {
                     return Err(Error::Network(
                         "Failed to receive a request from TCP stream".to_string(),
-                    ))
+                    ));
                 }
             };
 
