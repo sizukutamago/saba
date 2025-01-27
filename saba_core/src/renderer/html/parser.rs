@@ -70,9 +70,111 @@ impl HtmlParser {
                     self.mode = InsertionMode::BeforeHead;
                     continue;
                 }
-                InsertionMode::BeforeHead => {}
-                InsertionMode::InHead => {}
-                InsertionMode::AfterHead => {}
+                InsertionMode::BeforeHead => {
+                    match token {
+                        Some(HtmlToken::Char(c)) => {
+                            if c == ' ' || c == '\n' {
+                                token = self.t.next();
+                                continue;
+                            }
+                        }
+                        Some(HtmlToken::StartTag {
+                            ref tag,
+                            self_closing,
+                            ref attributes,
+                        }) => {
+                            if tag.name == "head" {
+                                self.insert_element(tag, attributes.to_vec());
+                                self.mode = InsertionMode::InHead;
+                                token = self.t.next();
+                                continue;
+                            }
+                        }
+                        Some(HtmlToken::Eof) | None => {
+                            return self.window.clone();
+                        }
+                        _ => {}
+                    }
+                    self.insert_element("head", Vec::new());
+                    self.mode = InsertionMode::InHead;
+                    continue;
+                }
+                InsertionMode::InHead => {
+                    match token {
+                        Some(HtmlToken::Char(c)) => {
+                            if c == ' ' || c == '\n' {
+                                token = self.t.next();
+                                continue;
+                            }
+                        }
+                        Some(HtmlToken::StartTag {
+                            ref tag,
+                            self_closing,
+                            ref attributes,
+                        }) => {
+                            if tag.name == "style" || tag.name == "script" {
+                                self.insert_element(tag, attributes.to_vec());
+                                self.original_insertion_mode = self.mode;
+                                self.mode = InsertionMode::Text;
+                                token = self.t.next();
+                                continue;
+                            }
+                            if tag == "body" {
+                                self.pop_until(ElementKind::Head);
+                                self.mode = InsertionMode::AfterHead;
+                                continue;
+                            }
+                            if let Ok(_element_kind) = ElementKind::from_str(tag) {
+                                self.pop_until(ElementKind::Head);
+                                self.mode = InsertionMode::AfterHead;
+                                continue;
+                            }
+                        }
+                        Some(HtmlToken::EndTag { ref tag }) => {
+                            if tag == "head" {
+                                self.mode = InsertionMode::AfterHead;
+                                token = self.t.next();
+                                self.pop_until(ElementKind::Head);
+                                continue;
+                            }
+                        }
+                        Some(HtmlToken::Eof) | None => {
+                            return self.window.clone();
+                        }
+                    }
+                    token = self.t.next();
+                    continue;
+                }
+                InsertionMode::AfterHead => {
+                    match token {
+                        Some(HtmlToken::Char(c)) => {
+                            if c == ' ' || c == '\n' {
+                                self.insert_char(c);
+                                token = self.t.next();
+                                continue;
+                            }
+                        }
+                        Some(Htmltoken::StartTag {
+                            ref tag,
+                            self_closing,
+                            ref attributes,
+                        }) => {
+                            if tag == "body" {
+                                self.insert_element(tag, attributes.to_vec());
+                                token = self.t.next();
+                                self.mode = InsertionMode::InBody;
+                                continue;
+                            }
+                        }
+                        Some(HtmlToken::Eof) | None => {
+                            return self.window.clone();
+                        }
+                        _ => {}
+                    }
+                    self.insert_element("body", Vec::new());
+                    self.mode = InsertionMode::InBody;
+                    continue;
+                }
                 InsertionMode::InBody => {}
                 InsertionMode::Text => {}
                 InsertionMode::AfterBody => {}
