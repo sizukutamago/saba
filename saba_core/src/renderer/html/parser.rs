@@ -210,9 +210,69 @@ impl HtmlParser {
                     }
                     self.window.clone()
                 }
-                InsertionMode::Text => {}
-                InsertionMode::AfterBody => {}
-                InsertionMode::AfterAfterBody => {}
+                InsertionMode::Text => {
+                    match token {
+                        Some(HtmlToken::Eof) | None => {
+                            return self.window.clone();
+                        }
+                        Some(HtmlToken::EndTag { ref tag }) => {
+                            if tag == "style" {
+                                self.pop_until(ElementKind::Style);
+                                self.mode = self.original_insertion_mode;
+                                token = self.t.next();
+                                continue;
+                            }
+                            if tag == "script" {
+                                self.pop_until(ElementKind::Script);
+                                self.mode = self.original_insertion_mode;
+                                token = self.t.next();
+                                continue;
+                            }
+                        }
+                        Some(HtmlToken::Char(c)) => {
+                            self.insert_char(c);
+                            token = self.t.next();
+                            continue;
+                        }
+                        _ => {}
+                    }
+
+                    self.mode = self.original_insertion_mode;
+                }
+                InsertionMode::AfterBody => {
+                    match token {
+                        Some(HtmlToken::Char(_c)) => {
+                            token = self.t.next();
+                            continue;
+                        }
+                        Some(HtmlToken::EndTag { ref tag }) => {
+                            if tag == "html" {
+                                self.mode = InsertionMode::AfterAfterBody;
+                                token = self.t.next();
+                                continue;
+                            }
+                        }
+                        Some(HtmlToken::Eof) | None => {
+                            return self.window.clone();
+                        }
+                        _ => {}
+                    }
+
+                    self.mode = InsertionMode::InBody;
+                }
+                InsertionMode::AfterAfterBody => {
+                    match token {
+                        Some(HtmlToken::Char(_c)) => {
+                            token = self.t.next();
+                            continue;
+                        }
+                        Some(HtmlToken::Eof) | None => {
+                            return self.window.clone();
+                        }
+                        _ => {}
+                    }
+                    self.mode = InsertionMode::InBody;
+                }
             }
         }
 
