@@ -1,6 +1,7 @@
 use crate::renderer::html::attribute::Attribute;
 use alloc::format;
 use alloc::rc::{Rc, Weak};
+use alloc::string::String;
 use alloc::vec::Vec;
 use core::cell::RefCell;
 use core::str::FromStr;
@@ -160,6 +161,8 @@ pub enum ElementKind {
     Script,
     /// https://html.spec.whatwg.org/multipage/semantics.html#the-body-element
     Body,
+    /// https://html.spec.whatwg.org/multipage/grouping-content.html#the-p-element
+    P,
 }
 
 impl FromStr for ElementKind {
@@ -172,6 +175,7 @@ impl FromStr for ElementKind {
             "style" => Ok(ElementKind::Style),
             "script" => Ok(ElementKind::Script),
             "body" => Ok(ElementKind::Body),
+            "p" => Ok(ElementKind::P),
             _ => Err(format!("invalid element kind: {}", s)),
         }
     }
