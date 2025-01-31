@@ -1,111 +1,15 @@
 use crate::renderer::html::attribute::Attribute;
 use alloc::format;
-use alloc::rc::{Rc, Weak};
+use alloc::rc::Rc;
+use alloc::rc::Weak;
 use alloc::string::String;
 use alloc::vec::Vec;
 use core::cell::RefCell;
 use core::str::FromStr;
 
 #[derive(Debug, Clone)]
-pub struct Node {
-    pub kind: NodeKind,
-    window: Weak<RefCell<Window>>,
-    parent: Weak<RefCell<Node>>,
-    first_child: Option<Rc<RefCell<Node>>>,
-    last_child: Weak<RefCell<Node>>,
-    previous_sibling: Weak<RefCell<Node>>,
-    next_sibling: Option<Weak<RefCell<Node>>>,
-}
-
-impl Node {
-    pub fn new(kind: NodeKind) -> Self {
-        Self {
-            kind,
-            window: Weak::new(),
-            parent: Weak::new(),
-            first_child: None,
-            last_child: Weak::new(),
-            previous_sibling: Weak::new(),
-            next_sibling: None,
-        }
-    }
-
-    pub fn set_parent(&mut self, parent: Weak<RefCell<Node>>) {
-        self.parent = parent;
-    }
-
-    pub fn parent(&self) -> Weak<RefCell<Node>> {
-        self.parent.clone()
-    }
-    pub fn set_first_child(&mut self, first_child: Option<Rc<RefCell<Node>>>) {
-        self.first_child = first_child;
-    }
-
-    pub fn first_child(&self) -> Option<Rc<RefCell<Node>>> {
-        self.first_child.clone()
-    }
-
-    pub fn set_last_child(&mut self, last_child: Weak<RefCell<Node>>) {
-        self.last_child = last_child;
-    }
-
-    pub fn last_child(&self) -> Weak<RefCell<Node>> {
-        self.last_child.clone()
-    }
-
-    pub fn set_previous_sibling(&mut self, previous_sibling: Weak<RefCell<Node>>) {
-        self.previous_sibling = previous_sibling;
-    }
-
-    pub fn previous_sibling(&self) -> Weak<RefCell<Node>> {
-        self.previous_sibling.clone()
-    }
-
-    pub fn set_next_sibling(&mut self, next_sibling: Option<Weak<RefCell<Node>>>) {
-        self.next_sibling = next_sibling;
-    }
-
-    pub fn next_sibling(&self) -> Option<Weak<RefCell<Node>>> {
-        self.next_sibling.as_ref().cloned()
-    }
-
-    pub fn set_window(&mut self, window: Weak<RefCell<Window>>) {
-        self.window = window;
-    }
-
-    pub fn kind(&self) -> NodeKind {
-        self.kind.clone()
-    }
-
-    pub fn get_element(&self) -> Option<Element> {
-        match self.kind {
-            NodeKind::Document | NodeKind::Text(_) => None,
-            NodeKind::Element(ref e) => Some(e.clone()),
-        }
-    }
-
-    pub fn element_kind(&self) -> Option<ElementKind> {
-        match self.kind {
-            NodeKind::Document | NodeKind::Text(_) => None,
-            NodeKind::Element(ref e) => Some(e.kind),
-        }
-    }
-}
-
-#[derive(Debug, Clone)]
-pub enum NodeKind {
-    /// https://dom.spec.whatwg.org/#interface-document
-    Document,
-    /// https://dom.spec.whatwg.org/#interface-element
-    Element,
-    /// https://dom.spec.whatwg.org/#interface-text
-    Text,
-}
-
-/// https://html.spec.whatwg.org/multipage/nav-history-apis.html#window
-#[derive(Debug, Clone)]
 pub struct Window {
-    pub document: Rc<RefCell<Node>>,
+    document: Rc<RefCell<Node>>,
 }
 
 impl Window {
@@ -127,11 +31,127 @@ impl Window {
     }
 }
 
-/// https://dom.spec.whatwg.org/#interface-element
 #[derive(Debug, Clone)]
+pub struct Node {
+    pub kind: NodeKind,
+    window: Weak<RefCell<Window>>,
+    parent: Weak<RefCell<Node>>,
+    first_child: Option<Rc<RefCell<Node>>>,
+    last_child: Weak<RefCell<Node>>,
+    previous_sibling: Weak<RefCell<Node>>,
+    next_sibling: Option<Rc<RefCell<Node>>>,
+}
+
+impl PartialEq for Node {
+    fn eq(&self, other: &Self) -> bool {
+        self.kind == other.kind
+    }
+}
+
+impl Node {
+    pub fn new(kind: NodeKind) -> Self {
+        Self {
+            kind,
+            window: Weak::new(),
+            parent: Weak::new(),
+            first_child: None,
+            last_child: Weak::new(),
+            previous_sibling: Weak::new(),
+            next_sibling: None,
+        }
+    }
+
+    pub fn set_window(&mut self, window: Weak<RefCell<Window>>) {
+        self.window = window;
+    }
+
+    pub fn set_parent(&mut self, parent: Weak<RefCell<Node>>) {
+        self.parent = parent;
+    }
+
+    pub fn parent(&self) -> Weak<RefCell<Node>> {
+        self.parent.clone()
+    }
+
+    pub fn set_first_child(&mut self, first_child: Option<Rc<RefCell<Node>>>) {
+        self.first_child = first_child;
+    }
+
+    pub fn first_child(&self) -> Option<Rc<RefCell<Node>>> {
+        self.first_child.as_ref().cloned()
+    }
+
+    pub fn set_last_child(&mut self, last_child: Weak<RefCell<Node>>) {
+        self.last_child = last_child;
+    }
+
+    pub fn last_child(&self) -> Weak<RefCell<Node>> {
+        self.last_child.clone()
+    }
+
+    pub fn set_previous_sibling(&mut self, previous_sibling: Weak<RefCell<Node>>) {
+        self.previous_sibling = previous_sibling;
+    }
+
+    pub fn previous_sibling(&self) -> Weak<RefCell<Node>> {
+        self.previous_sibling.clone()
+    }
+
+    pub fn set_next_sibling(&mut self, next_sibling: Option<Rc<RefCell<Node>>>) {
+        self.next_sibling = next_sibling;
+    }
+
+    pub fn next_sibling(&self) -> Option<Rc<RefCell<Node>>> {
+        self.next_sibling.as_ref().cloned()
+    }
+
+    pub fn kind(&self) -> NodeKind {
+        self.kind.clone()
+    }
+
+    pub fn get_element(&self) -> Option<Element> {
+        match self.kind {
+            NodeKind::Document | NodeKind::Text(_) => None,
+            NodeKind::Element(ref e) => Some(e.clone()),
+        }
+    }
+
+    pub fn element_kind(&self) -> Option<ElementKind> {
+        match self.kind {
+            NodeKind::Document | NodeKind::Text(_) => None,
+            NodeKind::Element(ref e) => Some(e.kind()),
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum NodeKind {
+    /// https://dom.spec.whatwg.org/#interface-document
+    Document,
+    /// https://dom.spec.whatwg.org/#interface-element
+    Element(Element),
+    /// https://dom.spec.whatwg.org/#interface-text
+    Text(String),
+}
+
+impl PartialEq for NodeKind {
+    fn eq(&self, other: &Self) -> bool {
+        match &self {
+            NodeKind::Document => matches!(other, NodeKind::Document),
+            NodeKind::Element(e1) => match &other {
+                NodeKind::Element(e2) => e1.kind == e2.kind,
+                _ => false,
+            },
+            NodeKind::Text(_) => matches!(other, NodeKind::Text(_)),
+        }
+    }
+}
+
+/// https://dom.spec.whatwg.org/#interface-element
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Element {
-    pub kind: ElementKind,
-    pub attributes: Vec<Attribute>,
+    kind: ElementKind,
+    attributes: Vec<Attribute>,
 }
 
 impl Element {
@@ -157,9 +177,9 @@ pub enum ElementKind {
     Head,
     /// https://html.spec.whatwg.org/multipage/semantics.html#the-style-element
     Style,
-    /// https://html.spec.whatwg.org/multipage/semantics.html#the-script-element
+    /// https://html.spec.whatwg.org/multipage/scripting.html#the-script-element
     Script,
-    /// https://html.spec.whatwg.org/multipage/semantics.html#the-body-element
+    /// https://html.spec.whatwg.org/multipage/sections.html#the-body-element
     Body,
     /// https://html.spec.whatwg.org/multipage/grouping-content.html#the-p-element
     P,
@@ -184,7 +204,7 @@ impl FromStr for ElementKind {
             "h1" => Ok(ElementKind::H1),
             "h2" => Ok(ElementKind::H2),
             "a" => Ok(ElementKind::A),
-            _ => Err(format!("invalid element kind: {}", s)),
+            _ => Err(format!("unimplemented element name {:?}", s)),
         }
     }
 }
